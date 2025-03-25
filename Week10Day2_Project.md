@@ -150,7 +150,7 @@ Each student should:
 - Ensure that the code is well-documented.
 
 ### **📅 Deadline**
-Submit by the end of Week 10, Day 2.
+Submit by the end of Week 10, Day 3.
 
 ### **🚀 Bonus Challenge**
 - Extend the project to include data quality checks before inserting into the database.
