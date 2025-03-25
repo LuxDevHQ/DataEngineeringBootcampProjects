@@ -348,3 +348,51 @@ CREATE TABLE dataengineering.exchange_rates (
 select * from dataengineering.exchange_rates;
 ```
 
+```PYTHON
+import pandas as pd
+import psycopg2
+from sqlalchemy import create_engine
+from datetime import datetime
+import requests
+
+DB_NAME = "warehouse"
+DB_USER = "****"
+DB_PASSWORD = "*****"
+DB_HOST = "172.178.131.221"
+DB_PORT = "****"
+
+engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}")
+
+# Fetch Data from Central Bank of Kenya
+url = "https://www.centralbank.go.ke/wp-admin/admin-ajax.php?action=get_wdtable&table_id=193"
+
+today = datetime.now()
+date_range = today.strftime('%d/%m/%Y')
+
+form_data = {
+    "draw": "3",
+    "columns[0][data]": "0",
+    "columns[0][name]": "date_r",
+    "columns[0][searchable]": "true",
+    "columns[0][orderable]": "true",
+    "columns[0][search][value]": date_range,
+    "sRangeSeparator": "~"
+}
+
+response = requests.post(url, data=form_data)
+
+# Convert response JSON to Pandas DataFrame
+data = response.json()
+new_df = pd.DataFrame(data["data"], columns=["Date", "Currency Code", "New Mean"])
+
+# Convert Date column to proper format
+new_df["Date"] = pd.to_datetime(new_df["Date"], format="%d/%m/%Y")
+
+# Rename columns to match PostgreSQL table
+new_df.columns = ["date", "currency_code", "new_mean"]
+
+# Store DataFrame into PostgreSQL
+new_df.to_sql("exchange_rates", engine, if_exists="append", index=False, schema="dataengineering")
+
+print("Data inserted successfully!")
+```
