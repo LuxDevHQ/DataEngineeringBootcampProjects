@@ -329,3 +329,22 @@ Each student should:
 
 ### **📅 Deadline**
 Submit by the end of Week 10, Day 3
+
+
+#### **IMPORTANT SCRIPTS:**
+```SQL
+-- create schema dataengineering for the Exchange Rates Project
+create schema dataengineering;
+
+--create the table
+CREATE TABLE dataengineering.exchange_rates (
+    id SERIAL PRIMARY KEY,
+    date DATE NOT NULL,
+    currency_code TEXT NOT NULL,
+    new_mean DECIMAL(10,4) NOT NULL
+);
+
+-- Verify the table is created successfully.
+select * from dataengineering.exchange_rates;
+```
+
