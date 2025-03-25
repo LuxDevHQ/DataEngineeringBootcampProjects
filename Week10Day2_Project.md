@@ -1,7 +1,7 @@
 
 ### **Week 10, Day 2 - ETL Pipeline & Apache Airflow Scheduling**
 
-#### **📌 Project Overview**
+#### **📌 Project 1 Overview**
 This project involves building an **ETL (Extract, Transform, Load) pipeline** to collect foreign exchange rate data from the **Central Bank of Kenya API**, transform it using **Pandas**, store it in a database of your choice, and schedule the workflow using **Apache Airflow**.
 
 By the end of this project, you should be able to:
@@ -155,3 +155,177 @@ Submit by the end of Week 10, Day 3.
 ### **🚀 Bonus Challenge**
 - Extend the project to include data quality checks before inserting into the database.
 - Implement logging & monitoring to track ETL job execution.
+
+
+#### **📌 Project 2 Overview**
+In this project, you will **build a data pipeline** that automates the process of:
+1. **Extracting** data from an API or public dataset.
+2. **Transforming** the data into a structured format.
+3. **Loading** the cleaned data into **Azure Blob Storage or AWS S3**.
+4. **Scheduling** the workflow using **Apache Airflow**.
+
+By the end of this project, you should be able to:
+- Extract and process data from APIs
+- Store data in **Azure Blob Storage or AWS S3**
+- Automate the process using **Apache Airflow**
+
+---
+
+### **🛠 Step 1: Select Data Source**
+Choose a **public dataset** or API as your data source. Below are two options:
+
+#### **🔹 Option 1: Public API - OpenWeather API**
+- Fetch weather data using OpenWeatherMap API.
+- API Endpoint: `https://api.openweathermap.org/data/2.5/weather`
+- Example API Call:
+  ```bash
+  https://api.openweathermap.org/data/2.5/weather?q=Nairobi&appid=YOUR_API_KEY
+  ```
+  
+### **🛠 Step 2: Extract Data using Python**
+Write a Python script to fetch data from OpenWeather API.
+
+#### **🔹 Sample Python Script**
+```python
+import requests
+import json
+import pandas as pd
+from datetime import datetime
+
+# Define API URL and Key
+API_KEY = "your_api_key"
+CITY = "Nairobi"
+URL = f"https://api.openweathermap.org/data/2.5/weather?q={CITY}&appid={API_KEY}"
+
+# Fetch data
+response = requests.get(URL)
+data = response.json()
+
+# Extract relevant fields
+weather_data = {
+    "city": data["name"],
+    "temperature": data["main"]["temp"],
+    "humidity": data["main"]["humidity"],
+    "weather": data["weather"][0]["description"],
+    "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+}
+
+# Convert to DataFrame
+df = pd.DataFrame([weather_data])
+
+# Save as CSV
+df.to_csv("weather_data.csv", index=False)
+print("Weather data saved successfully!")
+```
+
+### **🛠 Step 3: Load Data into Cloud Storage**
+
+#### **🔹 Option 1: Load Data to AWS S3**
+Use boto3 to store the file in Amazon S3.
+
+```python
+import boto3
+
+# AWS Credentials
+AWS_ACCESS_KEY = "your-access-key"
+AWS_SECRET_KEY = "your-secret-key"
+BUCKET_NAME = "your-bucket-name"
+
+# Initialize S3 Client
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=AWS_ACCESS_KEY,
+    aws_secret_access_key=AWS_SECRET_KEY
+)
+
+# Upload File
+s3.upload_file("weather_data.csv", BUCKET_NAME, "data/weather_data.csv")
+print("File uploaded to S3!")
+```
+
+#### **🔹 Option 2: Load Data to Azure Blob Storage**
+Use azure-storage-blob to store the file in Azure Blob Storage.
+
+```python
+from azure.storage.blob import BlobServiceClient
+
+# Azure Credentials
+AZURE_CONNECTION_STRING = "your-azure-connection-string"
+CONTAINER_NAME = "your-container-name"
+
+# Initialize Blob Client
+blob_service_client = BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING)
+blob_client = blob_service_client.get_blob_client(container=CONTAINER_NAME, blob="weather_data.csv")
+
+# Upload File
+with open("weather_data.csv", "rb") as data:
+    blob_client.upload_blob(data, overwrite=True)
+print("File uploaded to Azure Blob Storage!")
+```
+
+### **🛠 Step 4: Automate the Pipeline with Apache Airflow**
+Use Apache Airflow to schedule and automate the ETL pipeline.
+
+#### **🔹 Install Apache Airflow**
+```bash
+pip install apache-airflow
+```
+
+#### **🔹 Create Airflow DAG**
+Save this file as `weather_etl_dag.py` in your Airflow DAGs folder.
+
+```python
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from datetime import datetime, timedelta
+import subprocess
+
+# Define default args
+default_args = {
+    'owner': 'airflow',
+    'depends_on_past': False,
+    'start_date': datetime(2025, 3, 25),
+    'retries': 1,
+    'retry_delay': timedelta(minutes=5),
+}
+
+# Define Python Functions
+def run_weather_etl():
+    subprocess.run(["python3", "weather_data_etl.py"])
+
+dag = DAG(
+    'weather_etl_pipeline',
+    default_args=default_args,
+    description='ETL pipeline for weather data',
+    schedule_interval='@hourly'
+)
+
+task1 = PythonOperator(
+    task_id='run_weather_etl',
+    python_callable=run_weather_etl,
+    dag=dag,
+)
+```
+
+#### **🔹 Start Apache Airflow**
+```bash
+airflow scheduler
+airflow webserver
+```
+
+Open Airflow UI at http://localhost:8080.
+
+Enable the `weather_etl_pipeline` DAG.
+
+### **✅ Submission Guidelines**
+Each student should:
+
+- Push the full project (Python scripts, DAGs, and configurations) to a GitHub repository.
+- Include a README.md with:
+  - Project overview
+  - Steps to set up AWS S3/Azure Blob Storage
+  - Instructions to run the Airflow DAG
+- Ensure that all code is well-documented.
+
+### **📅 Deadline**
+Submit by the end of Week 10, Day 3
